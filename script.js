@@ -11,6 +11,82 @@ const observer = new IntersectionObserver(
 
 document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
 
+const slotCounters = [...document.querySelectorAll('[data-slot-counter]')];
+const reduceSlotMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!reduceSlotMotion && slotCounters.length) {
+  slotCounters.forEach((counter) => {
+    const finalValue = counter.textContent.trim();
+    counter.setAttribute('aria-label', finalValue);
+    counter.replaceChildren();
+
+    Array.from(finalValue).forEach((character) => {
+      if (!/\d/.test(character)) {
+        const separator = document.createElement('span');
+        separator.textContent = character;
+        separator.setAttribute('aria-hidden', 'true');
+        counter.append(separator);
+        return;
+      }
+
+      const digit = Number(character);
+      const windowElement = document.createElement('span');
+      windowElement.className = 'slot-digit-window';
+      windowElement.setAttribute('aria-hidden', 'true');
+
+      const reel = document.createElement('span');
+      reel.className = 'slot-digit-reel';
+      Array.from({ length: 30 + digit + 1 }, (_, index) => {
+        const reelDigit = document.createElement('span');
+        reelDigit.textContent = String(index % 10);
+        reel.append(reelDigit);
+      });
+
+      windowElement.append(reel);
+      windowElement.style.setProperty('--slot-offset', `-${30 + digit}em`);
+      counter.append(windowElement);
+
+      window.requestAnimationFrame(() => {
+        windowElement.classList.add('is-spinning');
+      });
+    });
+  });
+}
+
+const typewriterTargets = [...document.querySelectorAll('[data-typewriter]')];
+const reduceTypewriterMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!reduceTypewriterMotion && typewriterTargets.length) {
+  const textNodes = typewriterTargets.flatMap((target) => {
+    const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    target.setAttribute('aria-label', target.textContent.replace(/\s+/g, ' ').trim());
+    return nodes;
+  });
+  const totalCharacters = textNodes.reduce(
+    (count, node) => count + Array.from(node.textContent).length,
+    0
+  );
+  let characterIndex = 0;
+
+  textNodes.forEach((textNode) => {
+    const fragment = document.createDocumentFragment();
+    Array.from(textNode.textContent).forEach((character) => {
+      const characterSpan = document.createElement('span');
+      characterSpan.className = 'typewriter-char';
+      characterSpan.textContent = character;
+      characterSpan.style.setProperty(
+        '--char-delay',
+        `${totalCharacters > 1 ? (4.65 * characterIndex) / (totalCharacters - 1) : 0}s`
+      );
+      fragment.append(characterSpan);
+      characterIndex += 1;
+    });
+    textNode.replaceWith(fragment);
+  });
+}
+
 const heroCarousel = document.querySelector('[data-hero-carousel]');
 if (heroCarousel) {
   const heroSlides = [...heroCarousel.querySelectorAll('[data-hero-slide]')];
