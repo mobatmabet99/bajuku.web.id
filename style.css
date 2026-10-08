@@ -1853,6 +1853,10 @@ footer a:hover {
     color: #f0a181;
   }
 
+  & .marketplace-note {
+    color: #fff;
+  }
+
   & .bg-\[\#f7f4f1\] {
     background-color: #17181b;
   }
